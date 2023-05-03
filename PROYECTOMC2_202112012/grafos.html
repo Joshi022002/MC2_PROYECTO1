@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Programa de grafos</title>
+    <style>
+      #canvasContainer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #canvasWrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #canvasWrapper canvas {
+        margin: 10px;
+        width: 400px;
+        height: 400px;
+        border: 2px solid #444;
+        background-color: #eee;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+      }
+      #canvasWrapper canvas:first-child {
+        margin-left: 0;
+      }
+      #canvasWrapper canvas:last-child {
+        margin-right: 0;
+      }
+      #buttonsWrapper {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      #buttonsWrapper button {
+        margin: 10px;
+        width: 200px;
+        height: 50px;
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      #buttonsWrapper button:hover {
+        background-color: #3e8e41;
+      }
+      #buttonsWrapper button:active {
+        background-color: #1e4424;
+      }
+      .column {
+        margin-right: 4px;
+        margin-left: 20px;
+        flex: 33.33%;
+        max-width: 13.33%;
+      }
+      .row::after {
+        content: "";
+        clear: both;
+        display: table;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="canvasContainer">
+      <div id="canvasWrapper">
+        <canvas id="canvas" width="600" height="600"></canvas>
+      </div>
+    </div>
+    <div id="buttonsWrapper" class="row">
+      <div class="column">
+        <button id="shortestPathButton">Encontrar camino más corto</button>
+        <button id="alternatePathsButton">Encontrar dos caminos alternativos</button>
+      </div>
+      <div class="column">
+        <button id="addEdgeButton">Agregar arista</button>
+        <button id="deleteEdgeButton">Eliminar arista</button>
+      </div>
+      <div class="column">
+        <button id="clearCanvasButton">Limpiar canvas</button>
+        <button id="exitButton">Salir del programa</button>
+      </div>
+      <script src="tu-archivo-js.js"></script>
+<script>
+  setupEventListeners();
+</script>
+    <script>    
+function setupEventListeners() {
+  document.getElementById('shortestPathButton').addEventListener('click', function(event) {
+    let start = prompt('Ingrese el nombre del vértice de inicio:');
+    let end = prompt('Ingrese el nombre del vértice de destino:');
+
+    // Verificar que ambos vértices existan antes de buscar el camino más corto
+    let vertex1 = vertices.find(vertex => vertex.name == start);
+    let vertex2 = vertices.find(vertex => vertex.name == end);
+    if (!vertex1 || !vertex2) {
+      alert("Uno o ambos vértices no existen.");
+      return;
+    }
+
+    // Obtener el camino más corto entre los dos vértices
+    let shortestPath = dijkstra(start, end);
+
+    // Pintar las aristas del camino más corto en el canvas
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < edges.length; i++) {
+      let vertex1 = vertices.find(vertex => vertex.name == edges[i][0]);
+      let vertex2 = vertices.find(vertex => vertex.name == edges[i][1]);
+      context.beginPath();
+      context.moveTo(vertex1.x, vertex1.y);
+      context.lineTo(vertex2.x, vertex2.y);
+      if (shortestPath != null && shortestPath.includes(edges[i][0]) && shortestPath.includes(edges[i][1])) {
+        context.strokeStyle = "red"; // Cambiar el color de la arista a rojo si forma parte del camino más corto
+      } else {
+        context.strokeStyle = "#333"; // Mantener el color de la arista en negro
+      }
+      context.stroke();
+    }
+
+    // Volver a dibujar los vértices y las aristas con los colores actualizados
+    draw();
+  });
+}
+    
+    // Agregar un listener para detectar cuando se presiona el botón de encontrar el camino más corto
+      document.getElementById('shortestPathButton').addEventListener('click', function(event) {
+        let start = prompt('Ingrese el nombre del vértice de inicio:');
+        let end = prompt('Ingrese el nombre del vértice de fin:');
+        dijkstra(start, end);
+      });
+      // Agregar un listener para detectar cuando se presiona el botón de encontrar dos caminos alternativos
+      document.getElementById('alternatePathsButton').addEventListener('click', function(event) {
+        let start = prompt('Ingrese el nombre del vértice de inicio:');
+        let end = prompt('Ingrese el nombre del vértice de fin:');
+        let paths = findAlternatePaths(start, end);
+        if (paths == null) {
+          alert('No hay camino posible.');
+        } else {
+          let message = 'El camino más corto es: ' + paths[0].join(' -> ');
+          if (paths.length > 1) {
+            message += '\nLos siguientes caminos alternativos también son posibles:\n';
+            for (let i = 1; i < paths.length; i++) {
+              message += paths[i].join(' -> ') + '\n';
+            }
+          }
+          alert(message);
+        }
+      });
+      </script>
+      <script>
+      // Obtener el canvas y el contexto
+let canvas = document.getElementById('canvas');
+let context = canvas.getContext('2d');
+
+// Definir una lista de vértices y aristas vacía
+let vertices = [];
+let edges = [];
+
+// Agregar un listener para detectar cuando se hace clic en el canvas
+canvas.addEventListener('click', function(event) {
+  // Obtener las coordenadas del clic
+  let rect = canvas.getBoundingClientRect();
+  let x = event.clientX - rect.left;
+  let y = event.clientY - rect.top;
+  
+  // Buscar si ya existe un vértice en este lugar
+  let vertex = vertices.find(vertex => distance(vertex.x, vertex.y, x, y) < 30);
+  
+  if (vertex) {
+    // Si ya existe un vértice, borrarlo y todas sus aristas
+    vertices.splice(vertices.indexOf(vertex), 1);
+    edges = edges.filter(edge => edge[0] != vertex.name && edge[1] != vertex.name);
+  } else {
+    // Si no existe un vértice, verificar si ya existe un vértice con el mismo nombre
+    let name = prompt('Ingrese el nombre del vértice:');
+    let existingVertex = vertices.find(vertex => vertex.name == name);
+    if (existingVertex) {
+      alert("Ya existe un vértice con ese nombre.");
+      return;
+    }
+    vertices.push({name: name, x: x, y: y});
+  }
+});
+
+// Función para calcular la distancia entre dos puntos
+function distance(x1, y1, x2, y2) {
+  return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
+
+// Agregar un listener para detectar cuando se presiona una tecla
+document.addEventListener('keydown', function(event) {
+  // Verificar si se presiona la tecla "a"
+  if (event.key === "a") {
+    // Agregar una nueva arista
+    let start = prompt('Ingrese el nombre del vértice de inicio de la arista:');
+    let end = prompt('Ingrese el nombre del vértice de fin de la arista:');
+    
+    // Verificar que ambos vértices existan antes de agregar la arista
+    let vertex1 = vertices.find(vertex => vertex.name == start);
+    let vertex2 = vertices.find(vertex => vertex.name == end);
+    if (!vertex1 || !vertex2) {
+      alert("Uno o ambos vértices no existen.");
+      return;
+    }
+    
+    edges.push([start, end]);
+    draw();
+  }
+});
+
+// Agregar un listener para detectar cuando se presiona el botón de agregar una arista
+document.getElementById('addEdgeButton').addEventListener('click', function(event) {
+  let start = prompt('Ingrese el nombre del vértice de inicio de la arista:');
+  let end = prompt('Ingrese el nombre del vértice de fin de la arista:');
+  
+  // Verificar que ambos vértices existan antes de agregar la arista
+  let vertex1 = vertices.find(vertex => vertex.name == start);
+  let vertex2 = vertices.find(vertex => vertex.name == end);
+  if (!vertex1 || !vertex2) {
+    alert("Uno o ambos vértices no existen.");
+    return;
+  }
+  
+  edges.push([start, end]);
+});
+  
+// Agregar un listener para detectar cuando se presiona el botón de eliminar una arista
+document.getElementById('deleteEdgeButton').addEventListener('click', function(event) {
+  let start = prompt('Ingrese el nombre del vértice de inicio de la arista que desea eliminar:');
+  let end = prompt('Ingrese el nombre del vértice de fin de la arista que desea eliminar:');
+  
+  // Verificar que los vértices existan antes de eliminar la arista
+  let vertex1 = vertices.find(vertex => vertex.name == start);
+  let vertex2 = vertices.find(vertex => vertex.name == end);
+  if (!vertex1 || !vertex2) {
+    alert("Uno o ambos vértices no existen.");
+    return;
+  }
+  
+  edges = edges.filter(edge => !(edge[0] == start && edge[1] == end || edge[0] == end && edge[1] == start));
+});
+
+// Función para calcular la distancia entre dos puntos
+function distance(x1, y1, x2, y2) {
+  return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
+
+// Función para dibujar los vértices y las aristas
+function draw() {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  context.lineWidth = 5;
+  context.strokeStyle = "#333";
+  context.lineCap = "round";
+  // Dibujar las aristas
+  for (let i = 0; i < edges.length; i++) {
+    let vertex1 = vertices.find(vertex => vertex.name == edges[i][0]);
+    let vertex2 = vertices.find(vertex => vertex.name == edges[i][1]);
+    context.beginPath();
+    context.moveTo(vertex1.x, vertex1.y);
+    context.lineTo(vertex2.x, vertex2.y);
+    context.stroke();
+  }
+  
+// Dibujar los vértices
+// Establecer el tamaño y estilo de los vértices
+context.lineWidth = 3;
+context.strokeStyle = "#333";
+context.lineCap = "butt";
+context.font = "bold 16px Arial";
+for (let i = 0; i < vertices.length; i++) {
+    context.beginPath();
+    context.arc(vertices[i].x, vertices[i].y, 30, 0, 2 * Math.PI);
+    context.fillStyle = "#fff"; // agregar color de relleno
+    context.fill();
+    context.stroke();
+    context.fillStyle = "#333";
+    let textWidth = context.measureText(vertices[i].name).width;
+    context.fillText(vertices[i].name, vertices[i].x - textWidth / 2, vertices[i].y + 6);
+    context.textBaseline = "middle";
+}
+  
+  // Solicitar una nueva animación de la función draw
+  window.requestAnimationFrame(draw);
+}
+//funcion dijkstra
+function dijkstra(start, end) {
+  // Crear una lista de vértices no visitados
+  let unvisited = [...vertices];
+  
+  // Crear una lista de distancias, inicialmente todas en infinito
+  let distances = {};
+  for (let i = 0; i < vertices.length; i++) {
+    distances[vertices[i].name] = Infinity;
+  }
+  
+  // La distancia del vértice de inicio a sí mismo es 0
+  distances[start] = 0;
+  
+  // Crear una lista de padres, inicialmente todos nulos
+  let parents = {};
+  for (let i = 0; i < vertices.length; i++) {
+    parents[vertices[i].name] = null;
+  }
+  
+  // Mientras haya vértices no visitados
+  while (unvisited.length > 0) {
+    // Encontrar el vértice no visitado con la distancia mínima
+    let current = unvisited.reduce((minVertex, vertex) => distances[vertex.name] < distances[minVertex.name] ? vertex : minVertex, unvisited[0]);
+    
+    // Si hemos llegado al vértice final, detener la búsqueda
+    if (current.name == end) {
+      break;
+    }
+    
+    // Marcar el vértice actual como visitado
+    unvisited.splice(unvisited.indexOf(current), 1);
+    
+    // Actualizar las distancias y padres de los vértices adyacentes al vértice actual
+    for (let i = 0; i < edges.length; i++) {
+      let edge = edges[i];
+      if (edge[0] == current.name) {
+        let neighbor = vertices.find(vertex => vertex.name == edge[1]);
+        let distance = distances[current.name] + distance(current.x, current.y, neighbor.x, neighbor.y);
+        if (distance < distances[neighbor.name]) {
+          distances[neighbor.name] = distance;
+          parents[neighbor.name] = current.name;
+        }
+      } else if (edge[1] == current.name) {
+        let neighbor = vertices.find(vertex => vertex.name == edge[0]);
+        let distance = distances[current.name] + distance(current.x, current.y, neighbor.x, neighbor.y);
+        if (distance < distances[neighbor.name]) {
+          distances[neighbor.name] = distance;
+          parents[neighbor.name] = current.name;
+        }
+      }
+    }
+  }
+  
+  // Si no se encontró un camino, devolver null
+  if (parents[end] == null) {
+    return null;
+  }
+  
+  // Crear un arreglo para almacenar el camino desde el vértice final hasta el de inicio
+  let path = [end];
+  
+  // Agregar cada padre al arreglo de camino hasta llegar al vértice de inicio
+  while (parents[path[0]] != null) {
+    path.unshift(parents[path[0]]);
+  }
+  
+  // Pintar el camino más corto en el canvas cambiando el color de las aristas
+  ctx.beginPath();
+  ctx.lineWidth = 3;
+  for (let i = 0; i < edges.length; i++) {
+    let edge = edges[i];
+    let startVertex = vertices.find(vertex => vertex.name == edge[0]);
+    let endVertex = vertices.find(vertex => vertex.name == edge[1]);
+    if (path.includes(startVertex.name) && path.includes(endVertex.name)) {
+      // Si la arista forma parte del camino más corto, pintarla de rojo
+      ctx.strokeStyle = 'red';
+    } else {
+      // Si la arista no forma parte del camino más corto, pintarla de negro
+      ctx.strokeStyle = 'black';
+    }
+    ctx.moveTo(startVertex.x, startVertex.y);
+    ctx.lineTo(endVertex.x, endVertex.y);
+    ctx.stroke();
+  }
+  
+  // Devolver el camino encontrado
+  return path;
+
+  if (parents[end] != null) {
+    path.push(end);
+    while (parents[path[0]] != null) {
+      path.unshift(parents[path[0]]);
+    }
+  }
+  
+  // Resaltar las aristas del camino más corto
+  let highlightedEdges = [];
+  if (path.length > 0) {
+    for (let i = 0; i < path.length - 1; i++) {
+      highlightedEdges.push([path[i], path[i+1]]);
+    }
+  }
+  
+  // Crear el grafo con D3.js
+  let svg = d3.select("body")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+  
+  // Dibujar las aristas del grafo
+  svg.selectAll("line")
+    .data(edges)
+    .enter()
+    .append("line")
+    .attr("x1", function(d) { return vertices[d[0]].x; })
+    .attr("y1", function(d) { return vertices[d[0]].y; })
+    .attr("x2", function(d) { return vertices[d[1]].x; })
+    .attr("y2", function(d) { return vertices[d[1]].y; })
+    .style("stroke", function(d) { 
+      if (highlightedEdges.some(edge => edge[0] == d[0] && edge[1] == d[1] || edge[0] == d[1] && edge[1] == d[0])) {
+        // Si la arista forma parte del camino más corto, pintarla de rojo
+        return "red";
+      } else {
+        // Si la arista no forma parte del camino más corto, pintarla de negro
+        return "black";
+      }
+    });
+  
+  // Descargar la imagen del grafo
+  svg2img(svg.node(), function(err, img) {
+    if (err) throw err;
+    let link = document.createElement("a");
+    link.href = img.src;
+    link.download = "grafo.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    d3.select("svg").remove();
+  });
+}
+
+// Función para buscar dos caminos alternativos entre dos vértices
+function findAlternatePaths(start, end) {
+  // Encontrar el camino más corto
+  let shortestPath = dijkstra(start, end);
+  
+  if (shortestPath == null) {
+    // Si no hay camino posible, devolver null
+    return null;
+  }
+  
+  // Crear una lista de aristas que forman el camino más corto
+  let shortestEdges = [];
+  for (let i = 0; i < shortestPath.length - 1; i++) {
+    shortestEdges.push([shortestPath[i], shortestPath[i+1]]);
+  }
+  
+  // Encontrar todas las aristas que no forman parte del camino más corto
+  let alternateEdges = edges.filter(edge => !shortestEdges.some(shortestEdge => shortestEdge[0] == edge[0] && shortestEdge[1] == edge[1] || shortestEdge[0] == edge[1] && shortestEdge[1] == edge[0]));
+  
+  // Encontrar el camino más corto en cada subgrafo formado por las aristas alternativas
+  let alternatePaths = [];
+  for (let i = 0; i < alternateEdges.length; i++) {
+    let alternateStart = alternateEdges[i][0];
+    let alternateEnd = alternateEdges[i][1];
+    let alternatePath = dijkstra(alternateStart, alternateEnd);
+    if (alternatePath != null) {
+      alternatePaths.push(alternatePath);
+    }
+  }
+  
+  // Devolver el camino más corto y los dos caminos alternativos
+  return [shortestPath, ...alternatePaths.slice(0, 2)];
+}
+// Agregar un listener para detectar cuando se presiona el botón de encontrar dos caminos alternativos
+document.getElementById('alternatePathsButton').addEventListener('click', function(event) {
+  let start = prompt('Ingrese el nombre del vértice de inicio:');
+  let end = prompt('Ingrese el nombre del vértice de fin:');
+  let paths = findAlternatePaths(start, end);
+  if (paths == null) {
+    alert('No hay camino posible.');
+  } else {
+    let message = 'El camino más corto es: ' + paths[0].join(' -> ');
+    if (paths.length > 1) {
+      message += '\nLos siguientes caminos alternativos también son posibles:\n';
+      for (let i = 1; i < paths.length; i++) {
+        message += paths[i].join(' -> ') + '\n';
+      }
+    }
+    alert(message);
+  }
+});
+
+// Solicitar una nueva animación de la función draw
+window.requestAnimationFrame(draw);
+    </script>
+  </body>
+</html>
